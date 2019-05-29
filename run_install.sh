@@ -1,5 +1,11 @@
 source variables
 . functions.sh
+
+if [ -z "$DATA_DIR" ]
+then
+  echo "Need variable DATA_DIR"
+  exit 1
+fi
 if [ -z "$UPLOADHOST" ]
 then
   echo "Need variable UPLOADHOST"
@@ -34,14 +40,14 @@ else
   fi
 fi
 
-if [ ! -d /home/manmon-data ]
+if [ ! -d ${DATA_DIR} ]
 then
-  mkdir -p /home/manmon-data
+  mkdir -p ${DATA_DIR}
   if [ -f /usr/sbin/selinuxenabled ]
   then
     if /usr/sbin/selinuxenabled
     then
-      chcon -Rt svirt_sandbox_file_t /home/manmon-data/
+      chcon -Rt svirt_sandbox_file_t ${DATA_DIR}/
     fi
   fi
   add-users
@@ -54,7 +60,7 @@ then
 else
   create-manmon-auth-db-dirs
   docker run --restart unless-stopped --env MMPGUSER=manmon_auth --env MMPGPWD=adfjklBAjkn3124Bbjkav248gAnj --cpu-period=100000 --cpu-quota=25000 \
-    -v /home/manmon-data/manmon-auth-db/:/var/lib/postgresql/10 --memory-swap -1 -it -d -m 512m --name manmon-auth-db --net manmon \
+    -v ${DATA_DIR}/manmon-auth-db/:/var/lib/postgresql/10 --memory-swap -1 -it -d -m 512m --name manmon-auth-db --net manmon \
     --ip ${IP_PREFIX}.41 manmon/manmon-auth-db:latest 2>/dev/null
   if [ "$?" -ne 0 ]
   then
@@ -71,7 +77,7 @@ then
 else
   create-manmon-upload-db-dirs
   docker run --restart unless-stopped --env MMPGUSER=manmon_uploader --env MMPGPWD=mnjABSnmo1235Njakn054amkabjnj6Maouibn --cpu-period=100000 --cpu-quota=25000 \
-    -v /home/manmon-data/manmon-uploader-db/:/var/lib/postgresql/10 \
+    -v ${DATA_DIR}/manmon-uploader-db/:/var/lib/postgresql/10 \
     --memory-swap -1 -it -d -m 512m --name manmon-uploader-db --net manmon --ip ${IP_PREFIX}.42 manmon/manmon-uploader-db:latest 2>/dev/null
   if [ "$?" -ne 0 ]
   then
@@ -87,7 +93,7 @@ then
 else
   create-manmon-auth-dirs
   docker run --restart unless-stopped --cpu-period=100000 --cpu-quota=200000 -it -d -m 2560m \
-    -v /home/manmon-data/manmon-auth/webapps:/home/manmon-auth/tomcat/webapps --name manmon-auth --net manmon \
+    -v ${DATA_DIR}/manmon-auth/webapps:/home/manmon-auth/tomcat/webapps --name manmon-auth --net manmon \
     --ip ${IP_PREFIX}.51 manmon/manmon-auth:latest
   if [ "$?" -ne 0 ]
   then
@@ -98,20 +104,20 @@ else
   fi
 fi
 
-if [ ! -d /home/manmon-data/manmon-certs ]
+if [ ! -d ${DATA_DIR}/manmon-certs ]
 then
   create-certs-dirs
   docker run --rm \
-    -v /home/manmon-data/manmon-conf:/home/manmon-conf \
-    -v /home/manmon-data/manmon-certs/.certs:/home/manmon-certs/.certs \
-    -v /home/manmon-data/manmon-certs/conf:/home/manmon-certs/conf \
+    -v ${DATA_DIR}/manmon-conf:/home/manmon-conf \
+    -v ${DATA_DIR}/manmon-certs/.certs:/home/manmon-certs/.certs \
+    -v ${DATA_DIR}/manmon-certs/conf:/home/manmon-certs/conf \
     -it manmon/manmon-certs /home/manmon-certs/gen_cert_constants.py $UPLOADHOST 2>/dev/null
   if [ "$?" -ne 0 ]
   then
     echo "Error creating constants for certificates and keys"
     exit 1
   else
-    docker run --rm -v /home/manmon-data/manmon-conf:/home/manmon-conf -v /home/manmon-data/manmon-certs/.certs:/home/manmon-certs/.certs -v /home/manmon-data/manmon-certs/conf:/home/manmon-certs/conf -it manmon/manmon-certs /home/manmon-certs/gen_keys.sh 2>/dev/null
+    docker run --rm -v ${DATA_DIR}/manmon-conf:/home/manmon-conf -v ${DATA_DIR}/manmon-certs/.certs:/home/manmon-certs/.certs -v ${DATA_DIR}/manmon-certs/conf:/home/manmon-certs/conf -it manmon/manmon-certs /home/manmon-certs/gen_keys.sh 2>/dev/null
     if [ "$?" -ne 0 ]
     then
       echo "Error creating certificates and keys"
@@ -122,13 +128,13 @@ else
   echo "Certificates and keys directory exists"
 fi
 
-if [ ! -d /home/manmon-data/manmon-conf-rpm ]
+if [ ! -d ${DATA_DIR}/manmon-conf-rpm ]
 then
   create-manmon-conf-rpm-dirs
   docker run -e UPLOADHOST="$UPLOADHOST" -e CONFNAME="$CONF_NAME" -e VER="$PKG_VERSION" -e RELEASE="$PKG_RELEASE" --rm \
-    -v /home/manmon-data/manmon-certs/.certs:/home/manmon-certs/.certs \
-    -v /home/manmon-data/manmon-conf-rpm/rpmbuild:/home/mmagent/rpmbuild \
-    -v /home/manmon-data/manmon-conf:/home/manmon-conf \
+    -v ${DATA_DIR}/manmon-certs/.certs:/home/manmon-certs/.certs \
+    -v ${DATA_DIR}/manmon-conf-rpm/rpmbuild:/home/mmagent/rpmbuild \
+    -v ${DATA_DIR}/manmon-conf:/home/manmon-conf \
     -it manmon/manmon-conf-rpm /home/mmagent/create_pkg.sh 2>/dev/null
   if [ "$?" -ne 0 ]
   then
@@ -139,10 +145,10 @@ else
   echo "Configuration RPM directory exists"
 fi
 
-if [ ! -d /home/manmon-data/manmon-conf-dpkg ]
+if [ ! -d ${DATA_DIR}/manmon-conf-dpkg ]
 then
   create-manmon-conf-dpkg-dirs
-  docker run -e UPLOADHOST="$UPLOADHOST" -e CONFNAME="$CONF_NAME" -e VER="$PKG_VERSION" -e RELEASE="$PKG_RELEASE" --rm -v /home/manmon-data/manmon-conf-dpkg/.tmp:/home/mmagent/.tmp -v /home/manmon-data/manmon-conf:/home/manmon-conf -it manmon/manmon-conf-dpkg /home/mmagent/create_pkg.sh 2>/dev/null
+  docker run -e UPLOADHOST="$UPLOADHOST" -e CONFNAME="$CONF_NAME" -e VER="$PKG_VERSION" -e RELEASE="$PKG_RELEASE" --rm -v ${DATA_DIR}/manmon-conf-dpkg/.tmp:/home/mmagent/.tmp -v ${DATA_DIR}/manmon-conf:/home/manmon-conf -it manmon/manmon-conf-dpkg /home/mmagent/create_pkg.sh 2>/dev/null
   if [ "$?" -ne 0 ]
   then
     echo "Error creating configuration DPKG"
@@ -157,7 +163,7 @@ then
   echo "Container manmon-zookeeper exists already - not creating"
 else
   create-zookeeper-dirs
-  docker run --restart unless-stopped --cpu-period=100000 --cpu-quota=10000 --net manmon --ip ${IP_PREFIX}.21 -it -d -m 128m -v /home/manmon-data/manmon-zookeeper/data:/home/manmon_zk/data -v /home/manmon-data/manmon-zookeeper/logs:/home/manmon_zk/zookeeper/logs --name manmon-zookeeper manmon/manmon-zookeeper >/dev/null  2>/dev/null
+  docker run --restart unless-stopped --cpu-period=100000 --cpu-quota=10000 --net manmon --ip ${IP_PREFIX}.21 -it -d -m 128m -v ${DATA_DIR}/manmon-zookeeper/data:/home/manmon_zk/data -v ${DATA_DIR}/manmon-zookeeper/logs:/home/manmon_zk/zookeeper/logs --name manmon-zookeeper manmon/manmon-zookeeper >/dev/null  2>/dev/null
   if [ "$?" -ne 0 ]
   then
     echo "Error creating container manmon-zookeeper"
@@ -172,7 +178,7 @@ then
   echo "Container manmon-kafka exists already - not creating"
 else
   create-kafka-dirs
-  docker run --restart unless-stopped --cpu-period=100000 --cpu-quota=100000 --net manmon --ip ${IP_PREFIX}.22 -it -d -m 2048m -v /home/manmon-data/manmon-kafka/data:/home/manmon_kafka/data -v /home/manmon-data/manmon-kafka/logs:/home/manmon_kafka/kafka/logs --name manmon-kafka manmon/manmon-kafka >/dev/null  2>/dev/null 
+  docker run --restart unless-stopped --cpu-period=100000 --cpu-quota=100000 --net manmon --ip ${IP_PREFIX}.22 -it -d -m 2048m -v ${DATA_DIR}/manmon-kafka/data:/home/manmon_kafka/data -v ${DATA_DIR}/manmon-kafka/logs:/home/manmon_kafka/kafka/logs --name manmon-kafka manmon/manmon-kafka >/dev/null  2>/dev/null 
   if [ "$?" -ne 0 ]
   then
     echo "Error creating container manmon-kafka"
@@ -188,10 +194,10 @@ then
 else
   create-uploader-dirs-and-copy-keys
   docker run --restart unless-stopped --cpu-period=100000 --cpu-quota=200000 -it -d -m 2560m \
-    -v /home/manmon-data/manmon-uploader/logs:/home/manmon-uploader/tomcat/logs \
-    -v /home/manmon-data/manmon-uploader/.auth/:/home/manmon-uploader/.auth \
-    -v /home/manmon-data/manmon-uploader/conf:/home/manmon-uploader/conf \
-    -v /home/manmon-data/manmon-uploader/webapps:/home/manmon-uploader/tomcat/webapps \
+    -v ${DATA_DIR}/manmon-uploader/logs:/home/manmon-uploader/tomcat/logs \
+    -v ${DATA_DIR}/manmon-uploader/.auth/:/home/manmon-uploader/.auth \
+    -v ${DATA_DIR}/manmon-uploader/conf:/home/manmon-uploader/conf \
+    -v ${DATA_DIR}/manmon-uploader/webapps:/home/manmon-uploader/tomcat/webapps \
     --name manmon-uploader --net manmon --ip ${IP_PREFIX}.52 manmon/manmon-uploader >/dev/null 2>/dev/null
   if [ "$?" -ne 0 ]
   then
