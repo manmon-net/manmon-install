@@ -2,6 +2,6 @@
 
 Installer which creates Docker containers for services
 
-Data is stored at /home/manmon-data
+Edit variables file and set at least UPLOADHOST and CONF_NAME
 
 Execute ./run_install.sh at directory
