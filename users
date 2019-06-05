@@ -1,0 +1,17 @@
+100002#manmon_zk
+100003#manmon_kafka
+100004#manmon_auth
+100005#manmon_auth_db
+100006#manmon_uploader
+100007#manmon_uploader_db
+100008#manmon_certs
+100009#manmon_conf
+100010#mmagent
+100011#manmon_data_db
+100012#manmon_data_loader
+100013#manmon_mib_db
+100014#manmon_mib
+100015#manmon_data
+100016#manmon_hosts_db
+100017#manmon_hosts
+100018#manmon_web

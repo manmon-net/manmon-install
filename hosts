@@ -1,0 +1,16 @@
+10.20.0.41 manmon-auth-db
+10.20.0.43 manmon-data-db
+10.20.0.46 manmon-hosts-db
+10.20.0.45 manmon-mib-db
+10.20.0.42 manmon-uploader-db
+
+10.20.0.51 manmon-auth
+10.20.0.53 manmon-data
+10.20.0.56 manmon-hosts
+10.20.0.55 manmon-mib
+10.20.0.57 manmon-web
+
+10.20.0.22 manmon-kafka
+10.20.0.21 manmon-zookeeper
+
+10.20.0.52 manmon-uploader

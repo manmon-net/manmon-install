@@ -1,7 +1,8 @@
-UPLOADHOST=https://upload3.manmon.net
-CONF_NAME=org1
+UPLOADHOST=https://upload3.manmon.net:8943
+CONF_NAME=manmon1
 NETWORK_SIZE=24
 IP_PREFIX=10.20.0
-PKG_VERSION=1.0
+PKG_VERSION=1.1
 PKG_RELEASE=1
 DATA_DIR=/home/manmon-data
+WAR_LOCATION=https://manmon.net/war/
